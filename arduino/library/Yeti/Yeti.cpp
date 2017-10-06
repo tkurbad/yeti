@@ -503,8 +503,8 @@ void yeti::beep(int frequency, int duration)
 {
 	pinMode(beepNegative, OUTPUT);
 	pinMode(beepPositive, OUTPUT);
-	digitalWrite(beepNegative, HIGH);
-	tone(11, frequency, duration);
+	digitalWrite(beepNegative, LOW);
+	tone(beepPositive, frequency, duration);
 }
 
 
