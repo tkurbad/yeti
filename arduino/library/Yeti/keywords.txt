@@ -21,7 +21,12 @@ moveForwardXNC	KEYWORD2
 moveBackwardXNC	KEYWORD2
 moveBody	KEYWORD2
 moveLegs	KEYWORD2
+leftLEDOn	KEYWORD2
+leftLEDOff	KEYWORD2
+rightLEDOn	KEYWORD2
+rightLEDOff	KEYWORD2
 beep	KEYWORD2
+playNote	KEYWORD2
 initDisplay	KEYWORD2
 displayDigit	KEYWORD2
 initPing	KEYWORD2
