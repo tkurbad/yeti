@@ -11,7 +11,7 @@
  * Copyright (c) 2015 Thom Kouwen. All rights reserved.
 */
 
-#define USE_TIMER1
+#define USE_TIMER0
 
 volatile unsigned long count80kHz;	// internal variable for the ultrasound sensor
 
@@ -20,7 +20,7 @@ static inline void increaseCount()
 	count80kHz++;
 }
 
-ISR(TIMER2_COMPA_vect)				// interrupt to increase count on count80kHz variable
+ISR(TIMER0_COMPA_vect)				// interrupt to increase count on count80kHz variable
 {
 	increaseCount();
 }
@@ -37,13 +37,13 @@ yeti::yeti()
 
 	count80kHz = 0;					// Initialize ultrasound sensor count
 
-	// Variable initialization:
-	beepNegative = 4;				// pin attached to the negative side of the beeper
-	beepPositive = 11;				// pin attached to the positive side of the beeper
-	leftLED = 2;					// Left LED (1) is attached to pin 2 on the Arduino
-	rightLED = 8;					// Right LED (2) is attached to pin 8 on the Arduino
-	pinMode(leftLED, OUTPUT);		// Set LED1 pin to output
-	pinMode(rightLED, OUTPUT);		// Set LED2 pin to output
+	// LED Pin initialization
+	pinMode(LED_LEFT, OUTPUT);		// Set LED1 pin to output
+	pinMode(LED_RIGHT, OUTPUT);		// Set LED2 pin to output
+
+	// Beeper Pin initialization
+	pinMode(BEEP_NEGATIVE, OUTPUT);	// Set negative beeper pin to output
+	pinMode(BEEP_POSITIVE, OUTPUT);	// Set positive beeper pin to output
 
 	displayAdress = 0x70 >> 1;		// I2C address of the 4* 7SEG driver chip, bit shifted because arduino uses 7 bit adresses
 
@@ -67,6 +67,7 @@ yeti::yeti()
 		servoMid = 87;				// 87
 		negLean = 122;				// 122
 		negFwd = 109;				// 109
+		noLean = 87;
 	}
 	else
 	{
@@ -75,22 +76,13 @@ yeti::yeti()
 		servoMid = EEPROM.read(2);
 		negLean = EEPROM.read(3);
 		negFwd = EEPROM.read(4);
+		noLean = EEPROM.read(5);
 	}
 
-	// Constants to keep track of the position of the legs/body
+	// Variables to keep track of the position of the legs/body
 	bodyPos = 0;
-	bodyLeftFwd = 1;
-	bodyRightFwd = 2;
-
-	leanRight = 3;
-	leanLeft = 4;
-	leanUp = 5;
-	prevLean = 0;
-
-	leftForward = 6;
-	rightForward = 7;
-	bodyLevel = 8;
 	prevMove = 0;
+	prevLean = 0;
 
 	// Keep track of what Yeti is supposed to do
 	goForward = 0;
@@ -111,8 +103,8 @@ void yeti::initYeti()
 	servo2.write(87);
 
 	// Set LED Pin modes
-	pinMode(rightLED, OUTPUT);
-	pinMode(leftLED, OUTPUT);
+	pinMode(LED_RIGHT, OUTPUT);
+	pinMode(LED_LEFT, OUTPUT);
 }
 
 
@@ -161,7 +153,7 @@ void yeti::calibrate()
 				}
 				else if(servoPos == 1)
 				{
-					leanUp = tempServo1;
+					noLean = tempServo1;
 					IRSerialprintln("Center saved, now onto lean left");
 				}
 				else
@@ -175,7 +167,7 @@ void yeti::calibrate()
 				IRSerialprintln("Error, invalid entry");
 			servo1.write(tempServo1);
 		}
-		servo1.write(leanUp);
+		servo1.write(noLean);
 
 		IRSerialprintln("Bottom servo, first calibration point is right forward");
 		IRSerialprintln("Type S to save value");
@@ -226,6 +218,7 @@ void yeti::calibrate()
 		EEPROM.write(2, servoMid);
 		EEPROM.write(3, negLean);
 		EEPROM.write(4, negFwd);
+		EEPROM.write(5, noLean);
 	}
 	else
 		IRSerialprintln("calibration cancelled");
@@ -336,27 +329,27 @@ void yeti::moveForwardX(int nrSteps)
 		}
 	}
 
-	moveBody(leanUp);
-	moveLegs(bodyLevel);
+	moveBody(noLean);
+	moveLegs(BODY_LEVEL);
 }
 
 
 /* Make Yeti move one step forward, don't center legs afterwards */
 void yeti::moveForwardXNC()
 {
-	if(bodyPos == bodyLeftFwd)		// If left is currently in front, go here
+	if(bodyPos == BODY_LEFT_FWD)		// If left is currently in front, go here
 	{
-		moveBody(leanLeft, 16);
-		moveLegs(rightForward, 13);
-		moveBody(leanUp, 16);
-		bodyPos = bodyRightFwd;
+		moveBody(LEAN_LEFT, 16);
+		moveLegs(RIGHT_FORWARD, 13);
+		moveBody(noLean, 16);
+		bodyPos = BODY_RIGHT_FWD;
 	}
 	else
 	{
-		moveBody(leanRight, 16);
-		moveLegs(leftForward, 13);
-		moveBody(leanUp, 16);
-		bodyPos = bodyLeftFwd;
+		moveBody(LEAN_RIGHT, 16);
+		moveLegs(LEFT_FORWARD, 13);
+		moveBody(noLean, 16);
+		bodyPos = BODY_LEFT_FWD;
 	}
 }
 
@@ -364,19 +357,19 @@ void yeti::moveForwardXNC()
 /* Make Yeti move one step backward, don't center legs afterwards */
 void yeti::moveBackwardXNC()
 {
-	if(bodyPos == bodyLeftFwd)
+	if(bodyPos == BODY_LEFT_FWD)
 	{
-		moveBody(leanRight, 16);
-		moveLegs(rightForward, 16);
-		moveBody(leanUp, 16);
-		bodyPos = bodyRightFwd;
+		moveBody(LEAN_RIGHT, 16);
+		moveLegs(RIGHT_FORWARD, 16);
+		moveBody(noLean, 16);
+		bodyPos = BODY_RIGHT_FWD;
 	}
 	else
 	{
-		moveBody(leanLeft, 16);
-		moveLegs(leftForward, 16);
-		moveBody(leanUp, 16);
-		bodyPos = bodyLeftFwd;
+		moveBody(LEAN_LEFT, 16);
+		moveLegs(LEFT_FORWARD, 16);
+		moveBody(noLean, 16);
+		bodyPos = BODY_LEFT_FWD;
 	}
 }
 
@@ -384,61 +377,61 @@ void yeti::moveBackwardXNC()
 /* Make Yeti turn right by the specified angle */
 void yeti::turnRight(int angle)
 {
-	moveBody(leanLeft, 15);
-	moveLegs(leftForward, 15);
-	moveBody(leanUp, 16);
+	moveBody(LEAN_LEFT, 15);
+	moveLegs(LEFT_FORWARD, 15);
+	moveBody(noLean, 16);
 	delay(150);
 	if(angle == 0)
-		moveLegs(bodyLevel, 16);
+		moveLegs(BODY_LEVEL, 16);
 	else
-		moveLegs(rightForward, 16);
-	moveBody(leanRight, 17);
-	moveLegs(bodyLevel, 17);
-	moveBody(leanUp, 17);
+		moveLegs(RIGHT_FORWARD, 16);
+	moveBody(LEAN_RIGHT, 17);
+	moveLegs(BODY_LEVEL, 17);
+	moveBody(noLean, 17);
 }
 
 
 /* Make Yeti turn left by the specified angle */
 void yeti::turnLeft(int angle)
 {
-	moveBody(leanRight, 15);
-	moveLegs(rightForward, 15);
-	moveBody(leanUp, 16);
+	moveBody(LEAN_RIGHT, 15);
+	moveLegs(RIGHT_FORWARD, 15);
+	moveBody(noLean, 16);
 	delay(100);
 	if(angle == 0)
-		moveLegs(bodyLevel, 16);
+		moveLegs(BODY_LEVEL, 16);
 	else
-		moveLegs(leftForward, 16);
-	moveBody(leanLeft, 17);
-	moveLegs(bodyLevel, 17);
-	moveBody(leanUp, 17);
+		moveLegs(LEFT_FORWARD, 16);
+	moveBody(LEAN_LEFT, 17);
+	moveLegs(BODY_LEVEL, 17);
+	moveBody(noLean, 17);
 }
 
 
 /* Make Yeti lean his body (3 = right, 4 = left) */
 void yeti::moveBody(int leanDirection, int delayFactor)
 {
-	if(leanDirection == leanRight)
+	if(leanDirection == LEAN_RIGHT)
 	{
 		for (int i = servo1.read(); i != posLean; i--)
 		{
 			delay(1 * delayFactor);
 			servo1.write(i);
 		}
-		prevLean = leanRight;
+		prevLean = LEAN_RIGHT;
 	}
-	else if(leanDirection == leanLeft)
+	else if(leanDirection == LEAN_LEFT)
 	{
 		for (int i = servo1.read(); i != negLean; i++)
 		{
 			delay(1 * delayFactor);
 			servo1.write(i);
 		}
-		prevLean = leanLeft;
+		prevLean = LEAN_LEFT;
 	}
 	else
 	{
-		if(prevLean == leanRight)
+		if(prevLean == LEAN_RIGHT)
 		{
 			for(int i = servo1.read(); i != servoMid; i++)
 			{
@@ -446,7 +439,7 @@ void yeti::moveBody(int leanDirection, int delayFactor)
 				delay(1 * delayFactor);
 			}
 		}
-		else if(prevLean == leanLeft)
+		else if(prevLean == LEAN_LEFT)
 		{
 			for(int i = servo1.read(); i != servoMid; i--)
 			{
@@ -461,7 +454,7 @@ void yeti::moveBody(int leanDirection, int delayFactor)
 /* Make Yeti move his legs (left forward = 6, right forward = 7) */
 void yeti::moveLegs(int walkDirection, int delayFactor)
 {
-	if(walkDirection == rightForward)
+	if(walkDirection == RIGHT_FORWARD)
 	{
 		for (int i = servo2.read(); i != posFwd; i--)
 		{
@@ -469,7 +462,7 @@ void yeti::moveLegs(int walkDirection, int delayFactor)
 			servo2.write(i);
 		}
    }
-   else if(walkDirection == leftForward)
+   else if(walkDirection == LEFT_FORWARD)
    {
 		for (int i = servo2.read(); i != negFwd; i++)
 		{
@@ -497,16 +490,50 @@ void yeti::moveLegs(int walkDirection, int delayFactor)
 }
 
 
+/* Turn on left LED */
+void yeti::leftLEDOn()
+{
+	digitalWrite(LED_LEFT, HIGH);
+}
+
+
+/* Turn off left LED */
+void yeti::leftLEDOff()
+{
+	digitalWrite(LED_LEFT, LOW);
+}
+
+
+/* Turn on right LED */
+void yeti::rightLEDOn()
+{
+	digitalWrite(LED_RIGHT, HIGH);
+}
+
+
+/* Turn off right LED */
+void yeti::rightLEDOff()
+{
+	digitalWrite(LED_RIGHT, LOW);
+}
+
+
 /* Sound the buzzer (Serial communication is not possible during beeps!)
  */
 void yeti::beep(int frequency, int duration)
 {
-	pinMode(beepNegative, OUTPUT);
-	pinMode(beepPositive, OUTPUT);
-	digitalWrite(beepNegative, LOW);
-	tone(beepPositive, frequency, duration);
+	digitalWrite(BEEP_NEGATIVE, LOW);
+	tone(BEEP_POSITIVE, frequency, duration);
 }
 
+
+/* Play a note and (optionally) delay for delayms milliseconds */
+void yeti::playNote(int note, int duration, int delayms)
+{
+    beep(note, duration);
+    if (delay > 0)
+        delay(delayms);
+}
 
 /* Initialize the 7 segment 4 digit display module */
 void yeti::initDisplay()
@@ -558,8 +585,8 @@ void yeti::displayDigit(int firstDigit, int secondDigit, int thirdDigit,
 void yeti::initPing()
 {
 	noInterrupts();					// Temporarily disable interrupts
-	TCCR2A = (1<< WGM21);			// CTC, no IO toggling
-	OCR2A = 0xC7;					// 80 kHz
+	TCCR0A = (1<< WGM01);			// CTC, no IO toggling
+	OCR0A = 0xC7;					// 80 kHz
 	ADCSRA = 0;						// Disable ADC, leave settings intact
 	ADMUX = 0x00;					// Multiplexer for comparator to ADC0
 	ADCSRB = (1 << ACME);			// Enable the multiplexer
@@ -584,10 +611,10 @@ int yeti::ping()
 	pinMode(11, OUTPUT);			// Set pin B3 to output
 	pinMode(9, OUTPUT);
 
-	TCCR2A = (1 << COM2A0) | (1<< WGM21);	// Start toggling on OC2A
-	TCCR2B = (1 << CS20);			// No pre-scale
-	OCR2A = 0xC7;					// Set frequency to about 40kHz
-	TIMSK2 = (1 << OCIE2A);			// Enable Compare Match A interrupt
+	TCCR0A = (1 << COM0A0) | (1<< WGM01);	// Start toggling on OC2A
+	TCCR0B = (1 << CS00);			// No pre-scale
+	OCR0A = 0xC7;					// Set frequency to about 40kHz
+	TIMSK0 = (1 << OCIE0A);			// Enable Compare Match A interrupt
 	interrupts();					// Enable interrupts again
 	count80kHz = 0;
 
@@ -597,7 +624,7 @@ int yeti::ping()
 	}
 
 	noInterrupts();
-	TCCR2A = (1<< WGM21);			// CTC, no IO toggling
+	TCCR0A = (1<< WGM01);			// CTC, no IO toggling
 	interrupts();					// Enable interrupts again
 
 	distancePos = 0;
@@ -693,14 +720,14 @@ void yeti::getRFData()
 					if(inByte6 == 102)
 					{
 						// Turn on LEDs
-						digitalWrite(leftLED, HIGH);
-						digitalWrite(rightLED, HIGH);
+						digitalWrite(LED_LEFT, HIGH);
+						digitalWrite(LED_RIGHT, HIGH);
 					}
 					else if(inByte6 == 6)
 					{
 						// Turn off LEDs
-						digitalWrite(leftLED, LOW);
-						digitalWrite(rightLED, LOW);
+						digitalWrite(LED_LEFT, LOW);
+						digitalWrite(LED_RIGHT, LOW);
 					}
 					else if(((inByte6 & 0x18)== 0x18) || inByte5 == 52)
 					{
@@ -788,8 +815,8 @@ void yeti::respondRF()
 		{
 			if(prevMove)
 			{
-				moveLegs(leanUp, 25);
-				moveBody(bodyLevel, 25);
+				moveLegs(noLean, 25);
+				moveBody(BODY_LEVEL, 25);
 				prevMove = 0;
 			}
 		}
