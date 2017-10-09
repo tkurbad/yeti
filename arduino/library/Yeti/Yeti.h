@@ -60,7 +60,7 @@
 #define NOTE_C2		65
 #define NOTE_C2_SH	69
 #define NOTE_D2		73
-#define NOTE_D_SH	78
+#define NOTE_D2_SH	78
 #define NOTE_E2		82
 #define NOTE_F2		87
 #define NOTE_F2_SH	93
@@ -76,8 +76,8 @@
 #define NOTE_E3		165
 #define NOTE_F3		175
 #define NOTE_F3_SH	185
-#define NOTE_G1		196
-#define NOTE_G1_SH	208
+#define NOTE_G3		196
+#define NOTE_G3_SH	208
 #define NOTE_A3		220
 #define NOTE_A3_SH	233
 #define NOTE_B3		247
@@ -88,8 +88,8 @@
 #define NOTE_E4		330
 #define NOTE_F4		349
 #define NOTE_F4_SH	370
-#define NOTE_G2		392
-#define NOTE_G2_SH	415
+#define NOTE_G4		392
+#define NOTE_G4_SH	415
 #define NOTE_A4		440
 #define NOTE_A4_SH	466
 #define NOTE_B4		494
