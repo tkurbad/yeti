@@ -100,8 +100,8 @@
 #define NOTE_E5			659
 #define NOTE_F5			698
 #define NOTE_F5_SH		740
-#define NOTE_G3			784
-#define NOTE_G3_SH		831
+#define NOTE_G5			784
+#define NOTE_G5_SH		831
 #define NOTE_A5			880
 #define NOTE_A5_SH		932
 #define NOTE_B5			987
