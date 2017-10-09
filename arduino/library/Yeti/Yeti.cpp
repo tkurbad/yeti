@@ -25,11 +25,12 @@ ISR(TIMER0_COMPA_vect)				// interrupt to increase count on count80kHz variable
 	increaseCount();
 }
 
+/*
 ISR(ANALOG_COMP_vect)
 {
 	//PORTB &= ~(1 << PORTB1);
 }
-
+*/
 
 yeti::yeti()
 {
@@ -620,7 +621,7 @@ int yeti::ping()
 
 	while(count80kHz < 20)			// Send 10 pulses
 	{
-		//OCR2A = 0xC7 + (int(10)-count80kHz); //slightly play with the frequency 0xC7
+		//OCR0A = 0xC7 + (int(10)-count80kHz);  // Slightly play with the frequency 0xC7
 	}
 
 	noInterrupts();
@@ -844,20 +845,20 @@ void yeti::updateCommand()
 	digitalWrite(5, HIGH);
 
 	// Send all of the data
-	Serial.write(1);					// Start Byte: 1
-	Serial.write(255);					// Address PC: 255
-	Serial.write(14);					// Length: 14
-	Serial.write(254);					// Command: 254 "update data"
-	Serial.write(batteryVoltage);		// Data 0: battery voltage
-	Serial.write((byte)0x00);			// Data 1: current motor right, not available for Yeti
-	Serial.write((byte)0x00);			// Data 2: current motor left, not available for Yeti
-	Serial.write(servo1Pos);			// Data 3: front servo position
-	Serial.write(servo2Pos);			// Data 4: bottom servo position
-	Serial.write((byte)0x00);			// Data 5: errorbits
-	Serial.write((byte)0x00);			// Data 6: linesensor left, not available
-	Serial.write((byte)0x00);			// Data 7: linesensor right, not available
-	Serial.write((byte)0x00);			// Data 8: Servo disabled
-	Serial.write(4);					// Stopbit
+	Serial.write(1);				// Start Byte:	1
+	Serial.write(255);				// Address PC:	255
+	Serial.write(14);				// Length:		14
+	Serial.write(254);				// Command:		254 "update data"
+	Serial.write(batteryVoltage);	// Data 0: battery voltage
+	Serial.write((byte)0x00);		// Data 1: current motor right, not available for Yeti
+	Serial.write((byte)0x00);		// Data 2: current motor left, not available for Yeti
+	Serial.write(servo1Pos);		// Data 3: front servo position
+	Serial.write(servo2Pos);		// Data 4: bottom servo position
+	Serial.write((byte)0x00);		// Data 5: errorbits
+	Serial.write((byte)0x00);		// Data 6: linesensor left, not available
+	Serial.write((byte)0x00);		// Data 7: linesensor right, not available
+	Serial.write((byte)0x00);		// Data 8: Servo disabled
+	Serial.write(4);				// Stopbit
 }
 
 
@@ -870,7 +871,7 @@ void yeti::RFTest()
 		Serial.write(1);				// Start Byte:		1
 		Serial.write(255);				// Address PC:		255 
 		Serial.write(6);				// Length: 			7 bytes 
-		Serial.write(200);				// Control Byte:		200
+		Serial.write(200);				// Control Byte:	200
 		Serial.write((byte)0x10);		// Data byte 0:		10
 		Serial.write(4);				// Stop Byte:		4
 		delay(250);
