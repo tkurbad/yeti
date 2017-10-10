@@ -1,25 +1,22 @@
 #include <Servo.h>
 #include <Wire.h>
-#include <Yeti.h>                //include the yeti library
+#include <Yeti.h>             // Include the yeti library
 #include <EEPROM.h>
 
 /*
-This program has been written do demonstrate how great Yeti is.
-Yeti does have to be calibrated before loading this program, or
-it might fall over or not walk properly.
-It starts by displaying 1234 on the display, if that is connected.
-Immediately after that, it swings its body from right to left.
-After that, it will make 6 steps forward and then make the front
-LED's act as a heartbeat.
+This is a small example program making Yeti sing, blink
+his eyes, and probably more.
 */
 
-yeti robot;                    //create a yeti object
+yeti robot;                   // Create a yeti object
+long distance = 0;             // Variable to store measured distance
 
 void setup()
 {
-  robot.initYeti();                     //initialize the yeti program
-  robot.initPing();
-  robot.playNote(NOTE_G1, 500, 600);
+  robot.initYeti();           // Initialize the yeti
+  robot.initDisplay();        // Initialize the 4 digit display
+  robot.displayDigit(distance);
+/*  robot.playNote(NOTE_G1, 500, 600);  // Play "Haenschen klein"
   robot.playNote(NOTE_E1, 500, 600);
   robot.playNote(NOTE_E1, 500, 1100);
   robot.playNote(NOTE_F1, 500, 600);
@@ -68,16 +65,22 @@ void setup()
   robot.playNote(NOTE_G1, 500, 600);
   robot.playNote(NOTE_G1, 500, 600);
   robot.playNote(NOTE_C1, 1500, 2100);
+ */
 }
 
 void loop()
 {
-  robot.playNote(NOTE_B8, 50, 0);
-  robot.rightLEDOn();
+  robot.playNote(NOTE_B8, 50, 0); // Give a short beep
+  distance = robot.ping();        // Measure distance
+  robot.displayDigit(distance);   // Show distance on display
+  robot.rightLEDOn();             // Blink right and left leds
   delay(1000);
+  distance = robot.ping();        // Measure distance
+  robot.displayDigit(distance);   // Show distance on display
   robot.rightLEDOff();
   robot.leftLEDOn();
   delay(1000);
+  distance = robot.ping();        // Measure distance
+  robot.displayDigit(distance);   // Show distance on display
   robot.leftLEDOff();
-  int distance=robot.ping();
 }
