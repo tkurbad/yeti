@@ -20,6 +20,7 @@
 #define BEEP_POSITIVE	11	// pin attached to the positive side of the beeper
 #define LED_LEFT		2	// Left LED (1) is attached to pin 2 on the Arduino
 #define LED_RIGHT		8	// Right LED (2) is attached to pin 8 on the Arduino
+#define PING			7	// Pin Parallax Ping sensor is connected to (AIN1)
 
 // Movement/Position Constants
 #define BODY_LEFT_FWD	1	// Left body side is in forward position
@@ -213,9 +214,12 @@ class yeti
 		void displayDigit(int firstDigit, int secondDigit, 
 			int thirdDigit, int forthDigit);	// Display single digits
 
-		void usleep(unsigned long us);			// Sleep function
-		void increaseCount();
-		void initPing();						// Initialise the ultrasound sensor
+		/* No longer needed since we use a Parallax Ping distance sensor
+		 * instead of the one supplied by Arexx
+		 */
+		//void usleep(unsigned long us);		// Sleep function
+		//void initPing();						// Initialise the ultrasound sensor
+
 		int  ping();							// Get the current distance measurement from ultrasound sensor
 
 		void initRF(int baudrate);				// Initialize for the wireless module

@@ -11,32 +11,10 @@
  * Copyright (c) 2015 Thom Kouwen. All rights reserved.
 */
 
-#define USE_TIMER0
-
-volatile unsigned long count80kHz;	// internal variable for the ultrasound sensor
-
-static inline void increaseCount()
-{
-	count80kHz++;
-}
-
-ISR(TIMER0_COMPA_vect)				// interrupt to increase count on count80kHz variable
-{
-	increaseCount();
-}
-
-/*
-ISR(ANALOG_COMP_vect)
-{
-	//PORTB &= ~(1 << PORTB1);
-}
-*/
 
 yeti::yeti()
 {
 	Wire.begin();					// start the I2C bus
-
-	count80kHz = 0;					// Initialize ultrasound sensor count
 
 	// LED Pin initialization
 	pinMode(LED_LEFT, OUTPUT);		// Set LED1 pin to output
@@ -582,66 +560,28 @@ void yeti::displayDigit(int firstDigit, int secondDigit, int thirdDigit,
 }
 
 
-/* Initialize the ultrasound sensor */
-void yeti::initPing()
-{
-	noInterrupts();					// Temporarily disable interrupts
-	TCCR0A = (1<< WGM01);			// CTC, no IO toggling
-	OCR0A = 0xC7;					// 80 kHz
-	ADCSRA = 0;						// Disable ADC, leave settings intact
-	ADMUX = 0x00;					// Multiplexer for comparator to ADC0
-	ADCSRB = (1 << ACME);			// Enable the multiplexer
-	//ACSR = 0x02;					// React on falling edge, no interrupt
-	ACSR = B00010011;
-	interrupts();					// Enable interrupts again  
-}
-
-
-/* Sleep function */
-void yeti::usleep(unsigned long us)
-{
-	count80kHz = 0;
-	while(count80kHz * 25/2 < (2 * us));
-}
-
-
 /* Get the current distance measurement from ultrasound sensor */
 int yeti::ping()
 {
-	noInterrupts();					// Disable interrupts again
-	pinMode(11, OUTPUT);			// Set pin B3 to output
-	pinMode(9, OUTPUT);
+	long duration;
 
-	TCCR0A = (1 << COM0A0) | (1<< WGM01);	// Start toggling on OC2A
-	TCCR0B = (1 << CS00);			// No pre-scale
-	OCR0A = 0xC7;					// Set frequency to about 40kHz
-	TIMSK0 = (1 << OCIE0A);			// Enable Compare Match A interrupt
-	interrupts();					// Enable interrupts again
-	count80kHz = 0;
+	// The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+	// Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+	pinMode(PING, OUTPUT);
+	digitalWrite(PING, LOW);
+	delayMicroseconds(2);
+	digitalWrite(PING, HIGH);
+	delayMicroseconds(5);
+	digitalWrite(PING, LOW);
 
-	while(count80kHz < 20)			// Send 10 pulses
-	{
-		//OCR0A = 0xC7 + (int(10)-count80kHz);  // Slightly play with the frequency 0xC7
-	}
+	// The same pin is used to read the signal from the PING))): a HIGH pulse
+	// whose duration is the time (in microseconds) from the sending of the ping
+	// to the reception of its echo off of an object.
+	pinMode(PING, INPUT);
+	duration = pulseIn(PING, HIGH);
 
-	noInterrupts();
-	TCCR0A = (1<< WGM01);			// CTC, no IO toggling
-	interrupts();					// Enable interrupts again
-
-	distancePos = 0;
- 
-	for(int pos = 0; pos < 150; pos++)	// If it takes longer then this the sensor is out of range
-	{
-		usleep(23);
-		if((ACSR &(1 << ACI)) != 0)	// If ACI is set, we got a signal from the sensor
-		{
-			if(distancePos == 0)	// If distance is already set, don't set it again
-				distancePos = pos;
-		}
-
-		ACSR |= (1 << ACI);
-	}
-	return distancePos;
+	// convert the time into a distance
+	return duration / 29 / 2;
 }
 
 
